@@ -2,9 +2,9 @@ name: Build DcRat
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -48,9 +48,9 @@ jobs:
       
     # Delete-tag-and-release
     - name: Delete-tag-and-release
-      uses: dev-drprasad/delete-tag-and-release@v0.2.0
+      uses: dev-drprasad/delete-tag-and-release@v1.0
       with:
-        delete_release: true # default: false
+        delete_release: false # default: false
         tag_name: AutoBuild # tag name to delete
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
