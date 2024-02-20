@@ -12,7 +12,7 @@ A plus version for [dc-rat](https://github.com/qwqdanchun/DcRat) and more featur
 - [x] Connection
 - [ ] Plugins
 
-|Support for more countries' languages
+|*Support for more countries' languages*
 
 - [x] English
 - [ ] Chinese Traditional
