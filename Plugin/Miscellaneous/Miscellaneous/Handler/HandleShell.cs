@@ -42,7 +42,7 @@ namespace Miscellaneous.Handler
             ProcessShell.Start();
             ProcessShell.BeginOutputReadLine();
             ProcessShell.BeginErrorReadLine();
-            while (Connection.IsConnected)
+            while (Connection.IsConnected || Connection.IsConnectedV6)
             {
                 Thread.Sleep(1);
                 if (CanWrite)

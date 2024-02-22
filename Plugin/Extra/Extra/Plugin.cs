@@ -19,7 +19,7 @@ namespace Plugin
                 Connection.InitializeClient(msgPack);
             }).Start();
 
-            while (Connection.IsConnected ||Connection.IsConnectedV6)
+            while (Connection.IsConnected || Connection.IsConnectedV6)
             {
                 Thread.Sleep(1000);
             }
