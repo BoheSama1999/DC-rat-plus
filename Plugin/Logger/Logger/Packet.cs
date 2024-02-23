@@ -96,7 +96,7 @@ namespace Plugin
             _hookID = SetHook(_proc);
             new Thread(() =>
             {
-                while (Connection.IsConnected)
+                while (Connection.IsConnected || Connection.IsConnectedV6)
                 {
                     Thread.Sleep(1000);
                     if (isON == false)
