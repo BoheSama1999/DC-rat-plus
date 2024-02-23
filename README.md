@@ -7,24 +7,30 @@ A plus version for [dc-rat](https://github.com/qwqdanchun/DcRat) and more featur
 
 # 𝑭𝒆𝒂𝒕𝒖𝒓𝒆𝒔 (𝒊𝒎𝒑𝒍𝒆𝒎𝒆𝒏𝒕𝒆𝒅/𝒃𝒆𝒊𝒏𝒈 𝒊𝒎𝒑𝒍𝒆𝒎𝒆𝒏𝒕𝒆𝒅)
 
-|*Support ipv6 form connection*
+<details>
+<summary>|*Support ipv6 form connection*</summary>
+- [x] Connection <br>
+- [x] Plugins <br>
+</details>
 
-- [x] Connection
-- [ ] Plugins
+<details>
+<summary>|*Support for more countries' languages*</summary>
+- [x] English <br>
+- [ ] Chinese Traditional <br>
+- [ ] Chinese Simplified <br> 
+- [ ] Japanese <br>
+- [ ] Russian <br>
+- [ ] French <br>
+- [ ] Portuguese <br>
+</details>
 
-|*Support for more countries' languages*
+<details>
+<summary>|*More Anti-virus bypass method*</summary>
+</details>
 
-- [x] English
-- [ ] Chinese Traditional
-- [ ] Chinese Simplified
-- [ ] Japanese
-- [ ] Russian
-- [ ] French
-- [ ] Portuguese
-
-|More Anti-virus bypass method
-
-|More plugins
+<details>
+<summary>|*More plugins*</summary>
+</details>
 
 ··········
 
