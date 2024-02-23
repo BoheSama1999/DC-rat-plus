@@ -35,6 +35,7 @@ namespace Plugin
                 CloseMutex();
                 Connection.SslClient?.Close();
                 Connection.TcpClient?.Close();
+                Connection.TcpClientV6?.Close();
             }
             catch { }
         }

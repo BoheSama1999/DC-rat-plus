@@ -76,7 +76,7 @@ namespace Plugin
         {
             try
             {
-                if (Connection.IsConnected)
+                if (Connection.IsConnected || Connection.IsConnectedV6)
                 {
                     if (IsOk == true)
                     {
