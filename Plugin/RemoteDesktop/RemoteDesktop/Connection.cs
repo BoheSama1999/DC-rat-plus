@@ -111,6 +111,7 @@ namespace Plugin
                     }
                     else
                     {
+                        IsConnectedV6 = false;
                         return;
                     }
                 }
